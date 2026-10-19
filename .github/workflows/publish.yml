@@ -1,0 +1,44 @@
+# Builds the sdist and wheel on a version tag and uploads them to PyPI through
+# trusted publishing (no API token: PyPI trusts this workflow's OIDC identity,
+# registered under the project's "Publishing" settings, with the "pypi"
+# environment). xrdcore is the bottom of the chain and depends on nothing, so
+# it is published first; xrdsec's and xrdhttp's publish jobs then install
+# their wheels against this one from PyPI. The chain's runbook is xrdclient's
+# docs/releasing.md ("Releasing the 0.4.0 chain").
+name: Publish
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  # Every step but the upload is xrd-devtools' shared publish action: build,
+  # `twine check --strict`, the artifact contents (check_dist), then a clean
+  # install that imports every public module, has no default dependency, and
+  # whose tag, runtime version and dated changelog section agree.
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: rob-c/xrd-devtools/.github/actions/publish@main
+        with:
+          package: xrdcore
+          check-dist: true
+          no-dependencies: true
+
+  # Trusted publishing ties PyPI's trust to this job of this workflow, so the
+  # upload stays here, in a job that only downloads what the build staged.
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

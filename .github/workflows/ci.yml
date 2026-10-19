@@ -1,0 +1,60 @@
+name: CI
+
+# Every gate is one of xrd-devtools' reusable workflows (rob-c/xrd-devtools,
+# .github/workflows): the same steps in every repository of the chain, each
+# reading its configuration from this repository's pyproject.toml.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      devtools-ref:
+        description: "rob-c/xrd-devtools ref whose gates and tools run"
+        default: main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ruff, mypy --strict, complexipy, the take-over scorecard and the
+  # configuration conformance check. ``fast`` too: google-crc32c ships its
+  # own types, and mypy checks the accelerated path against them.
+  static:
+    uses: rob-c/xrd-devtools/.github/workflows/static.yml@main
+    with:
+      devtools-ref: ${{ inputs.devtools-ref || 'main' }}
+      extras: dev,fast
+
+  # The CRC-32C accelerator is optional: the suite must pass, at the same
+  # 100 %, with and without it, on Linux and macOS, Python 3.11-3.14.
+  test:
+    uses: rob-c/xrd-devtools/.github/workflows/tests.yml@main
+    with:
+      devtools-ref: ${{ inputs.devtools-ref || 'main' }}
+      extras: '["dev", "dev,fast"]'
+
+  # The wheel holds only the package; installed into a clean environment it
+  # imports every public module, with nothing else installed (no
+  # dependencies), and the ``fast`` extra brings the accelerator.
+  package:
+    uses: rob-c/xrd-devtools/.github/workflows/package.yml@main
+    with:
+      package: xrdcore
+      devtools-ref: ${{ inputs.devtools-ref || 'main' }}
+      post-install: |
+        "$PY" -m pip install --only-binary=:all: "$(ls "$DIST"/*.whl)[fast]"
+        "$PY" -m pip check
+        "$PY" -I -c 'from xrdcore import crc32c; assert crc32c.IS_ACCELERATED and crc32c.crc32c(b"123456789") == 0xE3069283'
+
+  # No function duplicated across the chain; every repository's configuration
+  # is the standard. This commit stands in for xrdcore's main.
+  chain:
+    uses: rob-c/xrd-devtools/.github/workflows/chain.yml@main
+    with:
+      xrdcore-ref: ${{ github.sha }}
+      devtools-ref: ${{ inputs.devtools-ref || 'main' }}
