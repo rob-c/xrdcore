@@ -20,6 +20,7 @@ here, and nothing that needs a third-party package to import.
 | `xrdcore.errors` | The exception vocabulary xrdcore, xrdsec and xrdhttp raise. Clients join it: a client's same-meaning names *are* these classes (`xrdclient.XRootDError is XrdError`), and its own errors subclass them, by multiple inheritance where they are also a builtin. |
 | `xrdcore.fanout` | `run_all()`: jobs run side by side on threads, the first failure raised as itself (the rest noted on it), queued jobs never started and running ones told to stop (`Stopped`); each job sees the caller's `contextvars`. `Pool`: a long-lived, named pool for work that is not a fan-out, made on first use and again after a fork. |
 | `xrdcore.sockets` | `recv_exact()`: exactly N bytes from a framed stream socket, or `ShortRead` (an `OSError`) saying how far it got. |
+| `xrdcore.suggest` | `suggestion()`: the `did you mean '-valid'?` a mis-typed option, command or choice value gets, behind `xrdcore.report.Parser.error`, so every tool on the stack has it and nothing has to be configured. |
 | `xrdcore.cli` | `ExitCode`, the exit statuses every tool shares (0, 1, 2, 70, 130, 141), `extends()` for a tool's own table, `run()` (Ctrl-C → 130, a closed pipe → a quiet 141), `Fatal` (any other failure: one redacted `prog: message` line, its status from the tool's `exit_code()` table, a bug's traceback at DEBUG) and `silence_stdout()`. |
 
 `import xrdcore` imports no submodule; each loads when first named.

@@ -5,7 +5,21 @@ Notable user-visible changes are recorded here. This project follows
 
 ## [0.4.1] - Unreleased
 
-No changes of its own: released with the 0.4.1 chain (xrdsec, xrdclient and xgfalclient fixes, xrdarc's production fixes), whose packages share one version.
+Released with the 0.4.1 chain (xrdsec, xrdclient and xgfalclient fixes, xrdarc's
+production fixes), whose packages share one version.
+
+### Added
+
+- A mis-typed command line is answered with the name that was probably meant:
+  `xrd-proxy init -vaild 1:00` says `unrecognized arguments: -vaild 1:00; did
+  you mean '-valid'?`, and a wrong command or choice value (`xrd-fs statt`,
+  `--profile arcx`) names the closest one the tool does take. It is one
+  implementation (`xrdcore.suggest`) behind `Parser.error`, so every tool that
+  builds the chain's parser - `xrd-cp`, `xrd-fs`, `xrd-proxy`, all twenty-one
+  `gfal-*` commands, `xrdarc` and `xrdwms` - gets it, and the suggestion
+  appears in the `--json`/`--xml` error record as well as on stderr. Nothing is
+  offered unless it is within a couple of edits or a shared short form, so
+  `--no-such-option` is not answered with `--no-authentication`.
 
 ## [0.4.0] - 2026-10-19
 

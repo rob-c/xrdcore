@@ -61,6 +61,7 @@ from contextlib import redirect_stderr, redirect_stdout
 from typing import Any, NoReturn, TextIO, cast
 from xml.etree import ElementTree as ET
 
+from . import suggest
 from .cli import ExitCode
 from .log import redact
 from .safexml import fromstring
@@ -152,10 +153,22 @@ class Parser(argparse.ArgumentParser):
     Plain argparse prints usage to stderr and exits ``2``; under ``--json`` that
     stderr text is captured as a ``message`` record, but a consumer needs a
     numeric error too, or the document's ``ok: false`` would have no cause.
+
+    It also answers a mis-typed name with the one that was probably meant
+    (:mod:`.suggest`), which is how every command on the stack - this module's
+    ``Parser`` is the only one they build - gets ``did you mean`` for free.
     """
 
     def error(self, message: str) -> NoReturn:
-        """Record the usage error with code ``2``, then let argparse exit."""
+        """Record the usage error with code ``2``, then let argparse exit.
+
+        A usage error that is a typo carries its suggestion in the message, so
+        it appears once: in the one line on stderr, and in the ``--json``
+        record a script reads.
+        """
+        hint = suggest.suggestion(self, message)
+        if hint:
+            message = f"{message}{hint}"
         report = current()
         if report is not None and report.closed:
             # The document has already been written: adding to it now would
