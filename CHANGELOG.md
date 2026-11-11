@@ -5,6 +5,13 @@ Notable user-visible changes are recorded here. This project follows
 
 ## [0.4.1] - Unreleased
 
+### Tested
+
+- The shared core is exercised end to end on **macOS** (Apple Silicon,
+  26.x): every CLI's `--json`/`--xml` report, the error codes and the
+  "did you mean" suggestions were used against production WLCG services with
+  X.509 authentication, not only in the test suite.
+
 Released with the 0.4.1 chain (xrdsec, xrdclient and xgfalclient fixes, xrdarc's
 production fixes), whose packages share one version.
 
